@@ -20,13 +20,6 @@ ARTIFACTS_DIR = Path(__file__).resolve().parent / "artifacts" / "live_calls"
 ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_event(call_sid: str, kind: str, payload: dict[str, Any]) -> None:
-    event_dir = ARTIFACTS_DIR / call_sid
-    event_dir.mkdir(parents=True, exist_ok=True)
-    event_path = event_dir / f"{kind}.json"
-    event_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-
 def save_recording(call_sid: str, recording_url: str) -> Path:
     account_sid = os.getenv("TWILIO_ACCOUNT_SID")
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
@@ -252,15 +245,12 @@ async def recording_status(request: Request) -> Response:
     form = await request.form()
     call_sid = str(form.get("CallSid", "call-default"))
     recording_url = str(form.get("RecordingUrl", "")).strip()
-    payload = {"form": dict(form)}
-    save_event(call_sid, "recording_status", payload)
 
     if recording_url and str(form.get("RecordingStatus", "")).lower() == "completed":
         try:
             audio_path = save_recording(call_sid, recording_url)
-            save_event(call_sid, "recording_saved", {"path": str(audio_path), "recording_url": recording_url})
         except Exception as error:
-            save_event(call_sid, "recording_error", {"error": str(error), "recording_url": recording_url})
+            pass
 
     return Response(status_code=200)
 
@@ -269,7 +259,6 @@ async def recording_status(request: Request) -> Response:
 async def handle_voice(request: Request) -> Response:
     form = await request.form()
     call_sid = str(form.get("CallSid", "call-default"))
-    save_event(call_sid, "voice_request", {"form": dict(form)})
     session = ensure_session(call_sid)
     session["started"] = True
 
@@ -292,8 +281,6 @@ async def handle_voice(request: Request) -> Response:
 async def handle_speech(request: Request) -> Response:
     form = await request.form()
     call_sid = str(form.get("CallSid", "call-default"))
-    payload = {"form": dict(form)}
-    save_event(call_sid, "speech_event", payload)
     user_input = str(form.get("SpeechResult") or form.get("Digits") or "").strip()
     session = ensure_session(call_sid)
 
