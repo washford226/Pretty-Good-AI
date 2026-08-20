@@ -56,9 +56,8 @@ htmlcov/
 .ipynb_checkpoints
 *.ipynb
 
-# Local artifacts (generated during runs)
-artifacts/live_calls/
-artifacts/logs/
+# Local call data (generated during runs)
+calls/
 
 # OS Files
 Thumbs.db
